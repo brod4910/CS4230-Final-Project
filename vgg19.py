@@ -79,5 +79,6 @@ class VGG19(nn.Module):
         out = self.b2(out)
         out = self.b3(out)
         out = self.b4(out)
+        out = out.view(out.size(0), -1)
         out = self.final(out)
         return out

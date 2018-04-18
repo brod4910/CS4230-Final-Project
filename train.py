@@ -20,23 +20,23 @@ def train_net(epoch, net, train_dataset_loader):
     with progressbar.ProgressBar(len(train_dataset_loader), redirect_stdout=True) as bar:
         for batch_idx, data in enumerate(train_dataset_loader):
             inputs = data['image']
-            labels = data['label'].type(torch.IntTensor)
+            labels = data['label'].type(torch.LongTensor)
 
             if use_cuda:
                 inputs, labels = inputs.cuda(), labels.cuda()
 
             optimizer.zero_grad()
             inputs, labels = Variable(inputs), Variable(labels)
-            labels = net(inputs)
-            loss = criterion(labels, labels)
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
             train_loss += loss.data[0]
-            _, predicted = torch.max(labels.data, 1)
+            _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += predicted.eq(labels.data).cpu().sum()
-
+            print('\n')
             bar.update(batch_idx)
             print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
@@ -49,20 +49,21 @@ def test_net(epoch, net, test_dataset_loader):
     with progressbar.ProgressBar(len(test_dataset_loader), redirect_stdout=True) as bar:
         for batch_idx, data in enumerate(test_dataset_loader):
             inputs = data['image']
-            labels = data['label'].type(torch.IntTensor)
+            labels = data['label'].type(torch.LongTensor)
 
             if use_cuda:
                 inputs, labels = inputs.cuda(), labels.cuda()
 
             inputs, labels = Variable(inputs, volatile=True), Variable(labels)
-            labels = net(inputs)
-            loss = criterion(labels, labels)
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
 
             test_loss += loss.data[0]
-            _, predicted = torch.max(labels.data, 1)
+            _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += predicted.eq(labels.data).cpu().sum()
-
+            
+            print('\n')
             bar.update(batch_idx)
             print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
@@ -93,11 +94,11 @@ if __name__ == '__main__':
 
     train_dataset = DatasetLoader.DatasetLoader(args.train_csv, (224,224))
 
-    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 16, shuffle= True,  num_workers= args.shards)
+    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 4, shuffle= True,  num_workers= args.shards)
 
     test_dataset = DatasetLoader.DatasetLoader(args.test_csv, (224,224))
 
-    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 16, shuffle= True, num_workers= args.shards)
+    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 4, shuffle= True, num_workers= args.shards)
 
     use_cuda = torch.cuda.is_available()
     best_accuracy = 0
