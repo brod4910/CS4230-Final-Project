@@ -12,7 +12,7 @@ class DatasetLoader(Dataset):
         # resize image function
         self.resize = transforms.Resize(dims)
         # Read the csv file
-        self.data_info = pd.read_csv(csv_path, header=None)
+        self.data_info = pd.read_csv(csv_path)
         # First column contains the image paths
         self.image_arr = np.asarray(self.data_info.iloc[:, 0])
         # Second column is the labels
@@ -40,3 +40,4 @@ class DatasetLoader(Dataset):
 
     def __len__(self):
         return self.data_len
+
