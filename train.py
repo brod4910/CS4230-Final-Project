@@ -1,0 +1,120 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.backends.cudnn as cudnn
+from torch.autograd import Variable
+import torch.nn.functional as F
+import time
+import os
+import DatasetLoader
+import argparse
+import progressbar
+import vgg19
+
+def train_net(epoch, net, train_dataset_loader):
+    print('\nEpoch: %d' % epoch)
+    net.train()
+    train_loss = 0
+    correct = 0
+    total = 0
+    with progressbar.ProgressBar(len(train_dataset_loader), redirect_stdout=True) as bar:
+        for batch_idx, data in enumerate(train_dataset_loader):
+            inputs = data['image']
+            labels = data['label'].type(torch.IntTensor)
+
+            if use_cuda:
+                inputs, labels = inputs.cuda(), labels.cuda()
+
+            optimizer.zero_grad()
+            inputs, labels = Variable(inputs), Variable(labels)
+            labels = net(inputs)
+            loss = criterion(labels, labels)
+            loss.backward()
+            optimizer.step()
+
+            train_loss += loss.data[0]
+            _, predicted = torch.max(labels.data, 1)
+            total += labels.size(0)
+            correct += predicted.eq(labels.data).cpu().sum()
+
+            bar.update(batch_idx)
+            print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+
+def test_net(epoch, net, test_dataset_loader):
+    global best_acc
+    net.eval()
+    test_loss = 0
+    correct = 0
+    total = 0
+    with progressbar.ProgressBar(len(test_dataset_loader), redirect_stdout=True) as bar:
+        for batch_idx, data in enumerate(test_dataset_loader):
+            inputs = data['image']
+            labels = data['label'].type(torch.IntTensor)
+
+            if use_cuda:
+                inputs, labels = inputs.cuda(), labels.cuda()
+
+            inputs, labels = Variable(inputs, volatile=True), Variable(labels)
+            labels = net(inputs)
+            loss = criterion(labels, labels)
+
+            test_loss += loss.data[0]
+            _, predicted = torch.max(labels.data, 1)
+            total += labels.size(0)
+            correct += predicted.eq(labels.data).cpu().sum()
+
+            bar.update(batch_idx)
+            print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+
+def GetArgParser():
+    parser = argparse.ArgumentParser(description='VGG19')
+
+    parser.add_argument(
+        'train_csv', 
+        action="store",
+        )
+    parser.add_argument(
+        'test_csv',
+        action="store",
+        )
+    parser.add_argument(
+        '-s',
+        '--shards',
+        type= int,
+        default= 2,
+        )
+
+    return parser
+
+if __name__ == '__main__':
+    progressbar.streams.wrap_stderr()
+
+    args, __ = GetArgParser().parse_known_args()
+
+    train_dataset = DatasetLoader.DatasetLoader(args.train_csv, (224,224))
+
+    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 16, shuffle= True,  num_workers= args.shards)
+
+    test_dataset = DatasetLoader.DatasetLoader(args.test_csv, (224,224))
+
+    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 16, shuffle= True, num_workers= args.shards)
+
+    use_cuda = torch.cuda.is_available()
+    best_accuracy = 0
+    start_epoch = 0
+
+    net = vgg19.VGG19()
+
+    if use_cuda:
+        net.cuda()
+        net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
+        cudnn.benchmark = True
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(), lr= .001, momentum= .09, weight_decay= (5* 10**(-4)), nesterov=True)
+
+    for epoch in range(50):
+        train_net(epoch, net, train_dataset_loader)
+        test_net(epoch, net, test_dataset_loader)
+
+

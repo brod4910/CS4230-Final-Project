@@ -7,32 +7,36 @@ from PIL import Image
 
 class DatasetLoader(Dataset):
 
-	def __init__(self, csv_path):
-		self.to_tensor = transforms.ToTensor()
-		# load the csv file
-		self.data_info = pd.read_csv(csv_path, header=None)
-		# load the image pages into a numpy array
-		self.image_arr = np.asarray(self.data_info.iloc[:, 0])
-		# load the labels into a numpy array
-		self.label_arr = np.asarray(self.data_info.iloc[:, 1])
-		# length of the data
-		self.data_len = len(self.data_info.index)
+    def __init__(self, csv_path, dims):
+        self.to_tensor = transforms.ToTensor()
+        # resize image function
+        self.resize = transforms.Resize(dims)
+        # Read the csv file
+        self.data_info = pd.read_csv(csv_path, header=None)
+        # First column contains the image paths
+        self.image_arr = np.asarray(self.data_info.iloc[:, 0])
+        # Second column is the labels
+        self.label_arr = np.asarray(self.data_info.iloc[:, 1])
+        # Calculate len
+        self.data_len = len(self.data_info.index)
 
-	def __getitem__(self, index):
-		# get image
-		single_image_name = self.image_arr[index]
-		# opent the image
-		image = Image.open(single_image_name)
+    def __getitem__(self, index):
+        # Get image name from the pandas df
+        image_name = self.image_arr[index]
+        # Open image
+        image = Image.open(image_name)
 
-		image = transforms.Resize((224,224))
+        image = self.resize(image)
 
-		# transform image to a tensor
-		image_as_tensor = self.to_tensor(image)
+        # Transform image to tensor
+        torch_image = self.to_tensor(image)
 
-		# get label
-		single_image_label = self.label_arr[index]
+        # Get label(class) of the image based on the cropped pandas column
+        label = self.label_arr[index]
 
-		return (image_as_tensor, single_image_label)
+        data = {'image': torch_image, 'label': label}
 
-	def __len__(self):
-		return self.data_len
+        return data
+
+    def __len__(self):
+        return self.data_len
