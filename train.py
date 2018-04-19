@@ -39,11 +39,11 @@ if __name__ == '__main__':
 
     train_dataset = DatasetLoader.DatasetLoader(args.train_csv, (224,224))
 
-    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 32, shuffle= True,  num_workers= args.shards)
+    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 4, shuffle= True,  num_workers= args.shards)
 
     test_dataset = DatasetLoader.DatasetLoader(args.test_csv, (224,224))
 
-    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 32, shuffle= True, num_workers= args.shards)
+    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 4, shuffle= True, num_workers= args.shards)
 
     use_cuda = torch.cuda.is_available()
     best_accuracy = 0
@@ -56,7 +56,11 @@ if __name__ == '__main__':
         net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
         cudnn.benchmark = True
 
-    criterion = nn.CrossEntropyLoss()
+    if use_cuda:
+        criterion = nn.CrossEntropyLoss().cuda()
+    else:
+        criterion = nn.CrossEntropyLoss()
+
     optimizer = optim.SGD(net.parameters(), lr= .001, momentum= .09, weight_decay= 5e-4, nesterov=True)
 
     def train_net(epoch):
