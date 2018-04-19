@@ -111,7 +111,7 @@ if __name__ == '__main__':
         cudnn.benchmark = True
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr= .001, momentum= .09, weight_decay= (5* 10**(-4)), nesterov=True)
+    optimizer = optim.SGD(net.parameters(), lr= .001, momentum= .09, weight_decay= 5e-4, nesterov=True)
 
     for epoch in range(50):
         train_net(epoch, net, train_dataset_loader)
