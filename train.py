@@ -8,8 +8,8 @@ import time
 import os
 import DatasetLoader
 import argparse
-import progressbar
 import vgg19
+from tqdm import tqdm
 
 def train_net(epoch, net, train_dataset_loader):
     print('\nEpoch: %d' % epoch)
@@ -17,7 +17,7 @@ def train_net(epoch, net, train_dataset_loader):
     train_loss = 0
     correct = 0
     total = 0
-    with progressbar.ProgressBar(len(train_dataset_loader), redirect_stdout=True) as bar:
+    with tqdm(total= len(train_dataset_loader)) as t:
         for batch_idx, data in enumerate(train_dataset_loader):
             inputs = data['image']
             labels = data['label'].type(torch.LongTensor)
@@ -37,7 +37,7 @@ def train_net(epoch, net, train_dataset_loader):
             total += labels.size(0)
             correct += predicted.eq(labels.data).cpu().sum()
             print('\n')
-            bar.update(batch_idx)
+            t.update()
             print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 def test_net(epoch, net, test_dataset_loader):
@@ -46,7 +46,7 @@ def test_net(epoch, net, test_dataset_loader):
     test_loss = 0
     correct = 0
     total = 0
-    with progressbar.ProgressBar(len(test_dataset_loader), redirect_stdout=True) as bar:
+    with tqdm(total= len(test_dataset_loader)) as t:
         for batch_idx, data in enumerate(test_dataset_loader):
             inputs = data['image']
             labels = data['label'].type(torch.LongTensor)
@@ -64,7 +64,7 @@ def test_net(epoch, net, test_dataset_loader):
             correct += predicted.eq(labels.data).cpu().sum()
             
             print('\n')
-            bar.update(batch_idx)
+            bar.update()
             print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 def GetArgParser():
@@ -88,8 +88,7 @@ def GetArgParser():
     return parser
 
 if __name__ == '__main__':
-    progressbar.streams.wrap_stderr()
-
+    
     args, __ = GetArgParser().parse_known_args()
 
     train_dataset = DatasetLoader.DatasetLoader(args.train_csv, (224,224))
