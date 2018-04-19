@@ -64,7 +64,7 @@ def test_net(epoch, net, test_dataset_loader):
             correct += predicted.eq(labels.data).cpu().sum()
             
             print('\n')
-            bar.update()
+            t.update()
             print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 def GetArgParser():
@@ -88,7 +88,7 @@ def GetArgParser():
     return parser
 
 if __name__ == '__main__':
-    
+
     args, __ = GetArgParser().parse_known_args()
 
     train_dataset = DatasetLoader.DatasetLoader(args.train_csv, (224,224))
