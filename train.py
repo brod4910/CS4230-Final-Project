@@ -12,12 +12,12 @@ import vgg19
 from tqdm import tqdm
 
 def train_net(epoch, net, train_dataset_loader):
-    print('\nEpoch: %d' % epoch)
+    tqdm.write('\nEpoch: %d' % epoch)
     net.train()
     train_loss = 0
     correct = 0
     total = 0
-    with tqdm(total= len(train_dataset_loader)) as t:
+    with tqdm(total= len(train_dataset_loader), file= file) as t:
         for batch_idx, data in enumerate(train_dataset_loader):
             inputs = data['image']
             labels = data['label'].type(torch.LongTensor)
@@ -36,9 +36,8 @@ def train_net(epoch, net, train_dataset_loader):
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += predicted.eq(labels.data).cpu().sum()
-            print('\n')
             t.update()
-            print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            tqdm.write('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 def test_net(epoch, net, test_dataset_loader):
     global best_acc
@@ -46,7 +45,7 @@ def test_net(epoch, net, test_dataset_loader):
     test_loss = 0
     correct = 0
     total = 0
-    with tqdm(total= len(test_dataset_loader)) as t:
+    with tqdm(total= len(test_dataset_loader), file= file) as t:
         for batch_idx, data in enumerate(test_dataset_loader):
             inputs = data['image']
             labels = data['label'].type(torch.LongTensor)
@@ -63,9 +62,8 @@ def test_net(epoch, net, test_dataset_loader):
             total += labels.size(0)
             correct += predicted.eq(labels.data).cpu().sum()
             
-            print('\n')
             t.update()
-            print('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            tqdm.write('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 def GetArgParser():
     parser = argparse.ArgumentParser(description='VGG19')
@@ -89,15 +87,17 @@ def GetArgParser():
 
 if __name__ == '__main__':
 
+    file = open("results.txt", "w")
+
     args, __ = GetArgParser().parse_known_args()
 
     train_dataset = DatasetLoader.DatasetLoader(args.train_csv, (224,224))
 
-    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 4, shuffle= True,  num_workers= args.shards)
+    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 32, shuffle= True,  num_workers= args.shards)
 
     test_dataset = DatasetLoader.DatasetLoader(args.test_csv, (224,224))
 
-    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 4, shuffle= True, num_workers= args.shards)
+    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 32, shuffle= True, num_workers= args.shards)
 
     use_cuda = torch.cuda.is_available()
     best_accuracy = 0
