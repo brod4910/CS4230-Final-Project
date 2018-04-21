@@ -1,121 +1,70 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.backends.cudnn as cudnn
-from torch.autograd import Variable
-import torch.nn.functional as F
-import time
 import os
-import DatasetLoader
-import argparse
-import vgg19
-from tqdm import tqdm
+import torch
+import torch.optim as optim
+import torch.nn.functional as F
+from torch.autograd import Variable
+from torchvision import datasets, transforms
+import torch.backends.cudnn as cudnn
 
-def GetArgParser():
-    parser = argparse.ArgumentParser(description='VGG19')
+def train(args, model, use_cuda):
+    # torch.manual_seed(args.seed + rank)
 
-    parser.add_argument(
-        'train_csv', 
-        action="store",
-        )
-    parser.add_argument(
-        'test_csv',
-        action="store",
-        )
-    parser.add_argument(
-        '-s',
-        '--shards',
-        type= int,
-        default= 2,
-        )
+    train_loader = torch.utils.data.DataLoader(
+        datasets.MNIST('../data', train=True, download=True,
+                    transform=transforms.Compose([
+                        transforms.Resize((224,224)),
+                        transforms.ToTensor(),
+                        transforms.Normalize((0.1307,), (0.3081,))
+                    ])),
+        batch_size=args.batch_size, shuffle=True, num_workers=2)
+    test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST('../data', train=False, transform=transforms.Compose([
+                        transforms.Resize((224,224)),
+                        transforms.ToTensor(),
+                        transforms.Normalize((0.1307,), (0.3081,))
+                    ])),
+        batch_size=args.batch_size, shuffle=True, num_workers=2)
 
-    return parser
+    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    for epoch in range(1, args.epochs + 1):
+        train_epoch(epoch, args, model, train_loader, optimizer, use_cuda)
+        test_epoch(model, test_loader)
 
-if __name__ == '__main__':
 
-    file = open("results.txt", "w")
+def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
+    model.train()
+    for batch_idx, (data, target) in enumerate(data_loader):
+        if use_cuda:
+            data, target = Variable(data.cuda()), Variable(target.cuda())
+        else:
+            data, target = Variable(data), Variable(target)
+            
+        optimizer.zero_grad()
+        output = model(data)
+        loss = F.nll_loss(output, target)
+        loss.backward()
+        optimizer.step()
+        if batch_idx % args.log_interval == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(data_loader.dataset),
+                100. * batch_idx / len(data_loader), loss.data[0]))
 
-    args, __ = GetArgParser().parse_known_args()
-
-    train_dataset = DatasetLoader.DatasetLoader(args.train_csv, (224,224))
-
-    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 64, shuffle= True,  num_workers= args.shards)
-
-    test_dataset = DatasetLoader.DatasetLoader(args.test_csv, (224,224))
-
-    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 64, shuffle= True, num_workers= args.shards)
-
-    use_cuda = torch.cuda.is_available()
-    best_accuracy = 0
-    start_epoch = 0
-
-    net = vgg19.VGG19()
-
-    if use_cuda:
-        net.cuda()
-        net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
-        cudnn.benchmark = True
-
-    if use_cuda:
-        criterion = nn.CrossEntropyLoss().cuda()
-    else:
-        criterion = nn.CrossEntropyLoss()
-
-    optimizer = optim.SGD(net.parameters(), lr= 10**(-2), momentum= .09, weight_decay= 5e-4)
-    # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor= .1, patience= 5)
-
-    def train_net(epoch):
-        print('\nEpoch: %d' % epoch)
-        net.train()
-
-        for batch_idx, data in enumerate(train_dataset_loader):
-            inputs = data['image']
-            targets = data['label'].type(torch.LongTensor)
-
-            if use_cuda:
-                inputs, targets = inputs.cuda(), targets.cuda()
-
-            inputs_var, targets_var = Variable(inputs), Variable(targets)
-
-            optimizer.zero_grad()
-            outputs = net(inputs_var)
-            loss = criterion(outputs, targets_var)
-            loss.backward()
-            optimizer.step()
-
-            if (batch_idx + 1)% 100 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, (batch_idx + 1) * len(inputs_var), len(train_dataset_loader.dataset),
-                100. * (batch_idx + 1) / len(train_dataset_loader), loss.data[0]))
-
-    def evaluate(data_loader):
-        net.eval()
-        loss = 0
-        correct = 0
-        
-        for raw in data_loader:
-            data = raw['image']
-            target = raw['label'].type(torch.LongTensor)
-
+def test_epoch(model, data_loader, use_cuda):
+    model.eval()
+    test_loss = 0
+    correct = 0
+    for data, target in data_loader:
+        if use_cuda:
+            data, target = Variable(data.cuda(), volatile=True), Variable(target.cuda())
+        else:
             data, target = Variable(data, volatile=True), Variable(target)
 
-            if torch.cuda.is_available():
-                data = data.cuda()
-                target = target.cuda()
-            
-            output = net(data)
-            
-            loss += F.cross_entropy(output, target, size_average=False).data[0]
+        output = model(data)
+        test_loss += F.nll_loss(output, target, size_average=False).data[0] # sum up batch loss
+        pred = output.data.max(1)[1] # get the index of the max log-probability
+        correct += pred.eq(target.data).cpu().sum()
 
-            pred = output.data.max(1, keepdim=True)[1]
-            correct += pred.eq(target.data.view_as(pred)).cpu().sum()
-            
-        loss /= len(data_loader.dataset)
-            
-        print('\nAverage loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
-            loss, correct, len(data_loader.dataset),
-            100. * correct / len(data_loader.dataset)))
-
-    for epoch in range(70):
-        train_net(epoch)
-        evaluate(test_dataset_loader)
+    test_loss /= len(data_loader.dataset)
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, len(data_loader.dataset),
+        100. * correct / len(data_loader.dataset)))

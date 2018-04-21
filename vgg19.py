@@ -19,7 +19,7 @@ class VGG19(nn.Module):
             return tuple(0 for __ in kernel)
 
         self.b0 = nn.Sequential(
-            nn.Conv2d(3, 64, 3, padding=calculate_padding('same', [3, 3])),
+            nn.Conv2d(1, 64, 3, padding=calculate_padding('same', [3, 3])),
             nn.ReLU(True),
             nn.Conv2d(64, 64, 3, padding=calculate_padding('same', [3, 3])),
             nn.ReLU(True),
@@ -83,4 +83,4 @@ class VGG19(nn.Module):
         out = self.b4(out)
         out = out.view(out.size(0), -1)
         out = self.final(out)
-        return out
+        return F.log_softmax(out, dim=1)
