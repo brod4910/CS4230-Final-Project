@@ -39,11 +39,11 @@ if __name__ == '__main__':
 
     train_dataset = DatasetLoader.DatasetLoader(args.train_csv, (224,224))
 
-    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 4, shuffle= True,  num_workers= args.shards)
+    train_dataset_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size= 64, shuffle= True,  num_workers= args.shards)
 
     test_dataset = DatasetLoader.DatasetLoader(args.test_csv, (224,224))
 
-    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 4, shuffle= True, num_workers= args.shards)
+    test_dataset_loader = torch.utils.data.DataLoader(dataset= test_dataset, batch_size= 64, shuffle= True, num_workers= args.shards)
 
     use_cuda = torch.cuda.is_available()
     best_accuracy = 0
@@ -65,10 +65,10 @@ if __name__ == '__main__':
     # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor= .1, patience= 5)
 
     def train_net(epoch):
-        tqdm.write('\nEpoch: %d' % epoch)
+        print('\nEpoch: %d' % epoch)
         net.train()
 
-        with tqdm(total= len(train_dataset_loader), file= file) as t:
+        # with tqdm(total= len(train_dataset_loader), file= file) as t:
             for batch_idx, data in enumerate(train_dataset_loader):
                 inputs = data['image']
                 targets = data['label'].type(torch.LongTensor)
@@ -88,14 +88,14 @@ if __name__ == '__main__':
                 # _, predicted = torch.max(outputs.data, 1)
                 # total += targets_var.size(0)
                 # correct += predicted.eq(targets_var.data).cpu().sum()
-                t.update()
-                if (batch_idx + 1)% 2 == 0:
-                    tqdm.write('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                # t.update()
+                if (batch_idx + 1)% 100 == 0:
+                    print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, (batch_idx + 1) * len(inputs_var), len(train_dataset_loader.dataset),
                     100. * (batch_idx + 1) / len(train_dataset_loader), loss.data[0]))
 
     def evaluate(data_loader):
-        model.eval()
+        net.eval()
         loss = 0
         correct = 0
         
@@ -118,7 +118,7 @@ if __name__ == '__main__':
             
         loss /= len(data_loader.dataset)
             
-        tqdm.write('\nAverage loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
+        print('\nAverage loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
             loss, correct, len(data_loader.dataset),
             100. * correct / len(data_loader.dataset)))
 
