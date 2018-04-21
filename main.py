@@ -37,9 +37,11 @@ if __name__ == '__main__':
     use_cuda = torch.cuda.is_available()
 
     if torch.cuda.device_count() > 1:
+        print(torch.cuda.device_count())
         model = nn.DataParallel(model)
         
     if use_cuda:
+        print("Cuda is available")
         model.cuda()
 
     train(args, model, use_cuda)
