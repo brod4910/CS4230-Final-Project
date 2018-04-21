@@ -62,7 +62,7 @@ if __name__ == '__main__':
         criterion = nn.CrossEntropyLoss()
 
     optimizer = optim.SGD(net.parameters(), lr= 10**(-2), momentum= .09, weight_decay= 5e-4)
-    # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor= .1, patience= 5)
+    # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor= .1, patience= 5)
 
     def train_net(epoch):
         print('\nEpoch: %d' % epoch)
@@ -76,10 +76,10 @@ if __name__ == '__main__':
                 inputs, targets = inputs.cuda(), targets.cuda()
 
             inputs_var, targets_var = Variable(inputs), Variable(targets)
+
+            optimizer.zero_grad()
             outputs = net(inputs_var)
             loss = criterion(outputs, targets_var)
-            
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
