@@ -68,31 +68,25 @@ if __name__ == '__main__':
         print('\nEpoch: %d' % epoch)
         net.train()
 
-        # with tqdm(total= len(train_dataset_loader), file= file) as t:
-            for batch_idx, data in enumerate(train_dataset_loader):
-                inputs = data['image']
-                targets = data['label'].type(torch.LongTensor)
+        for batch_idx, data in enumerate(train_dataset_loader):
+            inputs = data['image']
+            targets = data['label'].type(torch.LongTensor)
 
-                if use_cuda:
-                    inputs, targets = inputs.cuda(), targets.cuda()
+            if use_cuda:
+                inputs, targets = inputs.cuda(), targets.cuda()
 
-                inputs_var, targets_var = Variable(inputs), Variable(targets)
-                outputs = net(inputs_var)
-                loss = criterion(outputs, targets_var)
-                
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+            inputs_var, targets_var = Variable(inputs), Variable(targets)
+            outputs = net(inputs_var)
+            loss = criterion(outputs, targets_var)
+            
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-                # train_loss += loss.data[0]
-                # _, predicted = torch.max(outputs.data, 1)
-                # total += targets_var.size(0)
-                # correct += predicted.eq(targets_var.data).cpu().sum()
-                # t.update()
-                if (batch_idx + 1)% 100 == 0:
-                    print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch, (batch_idx + 1) * len(inputs_var), len(train_dataset_loader.dataset),
-                    100. * (batch_idx + 1) / len(train_dataset_loader), loss.data[0]))
+            if (batch_idx + 1)% 100 == 0:
+                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, (batch_idx + 1) * len(inputs_var), len(train_dataset_loader.dataset),
+                100. * (batch_idx + 1) / len(train_dataset_loader), loss.data[0]))
 
     def evaluate(data_loader):
         net.eval()
@@ -122,6 +116,6 @@ if __name__ == '__main__':
             loss, correct, len(data_loader.dataset),
             100. * correct / len(data_loader.dataset)))
 
-    for epoch in range(50):
+    for epoch in range(70):
         train_net(epoch)
         evaluate(test_dataset_loader)
