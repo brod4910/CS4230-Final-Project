@@ -28,7 +28,7 @@ def train(args, model, use_cuda):
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     for epoch in range(1, args.epochs + 1):
         train_epoch(epoch, args, model, train_loader, optimizer, use_cuda)
-        test_epoch(model, test_loader)
+        test_epoch(model, test_loader, use_cuda)
 
 
 def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
