@@ -61,62 +61,67 @@ if __name__ == '__main__':
     else:
         criterion = nn.CrossEntropyLoss()
 
-    optimizer = optim.SGD(net.parameters(), lr= .001, momentum= .09, weight_decay= 5e-4, nesterov=True)
+    optimizer = optim.SGD(net.parameters(), lr= 10**(-2), momentum= .09, weight_decay= 5e-4)
+    # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor= .1, patience= 5)
 
     def train_net(epoch):
         tqdm.write('\nEpoch: %d' % epoch)
         net.train()
-        train_loss = 0
-        correct = 0
-        total = 0
+
         with tqdm(total= len(train_dataset_loader), file= file) as t:
             for batch_idx, data in enumerate(train_dataset_loader):
                 inputs = data['image']
-                labels = data['label'].type(torch.LongTensor)
+                targets = data['label'].type(torch.LongTensor)
 
                 if use_cuda:
-                    inputs, labels = inputs.cuda(), labels.cuda()
+                    inputs, targets = inputs.cuda(), targets.cuda()
 
+                inputs_var, targets_var = Variable(inputs), Variable(targets)
+                outputs = net(inputs_var)
+                loss = criterion(outputs, targets_var)
+                
                 optimizer.zero_grad()
-                inputs, labels = Variable(inputs), Variable(labels)
-                outputs = net(inputs)
-                loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
 
-                train_loss += loss.data[0]
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += predicted.eq(labels.data).cpu().sum()
+                # train_loss += loss.data[0]
+                # _, predicted = torch.max(outputs.data, 1)
+                # total += targets_var.size(0)
+                # correct += predicted.eq(targets_var.data).cpu().sum()
                 t.update()
-                tqdm.write('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+                if (batch_idx + 1)% 2 == 0:
+                    tqdm.write('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                    epoch, (batch_idx + 1) * len(inputs_var), len(train_dataset_loader.dataset),
+                    100. * (batch_idx + 1) / len(train_dataset_loader), loss.data[0]))
 
-    def test_net(epoch):
-        global best_acc
-        net.eval()
-        test_loss = 0
+    def evaluate(data_loader):
+        model.eval()
+        loss = 0
         correct = 0
-        total = 0
-        with tqdm(total= len(test_dataset_loader), file= file) as t:
-            for batch_idx, data in enumerate(test_dataset_loader):
-                inputs = data['image']
-                labels = data['label'].type(torch.LongTensor)
+        
+        for raw in data_loader:
+            data = raw['image']
+            target = raw['label'].type(torch.LongTensor)
 
-                if use_cuda:
-                    inputs, labels = inputs.cuda(), labels.cuda()
+            data, target = Variable(data, volatile=True), Variable(target)
 
-                inputs, labels = Variable(inputs, volatile=True), Variable(labels)
-                outputs = net(inputs)
-                loss = criterion(outputs, labels)
+            if torch.cuda.is_available():
+                data = data.cuda()
+                target = target.cuda()
+            
+            output = net(data)
+            
+            loss += F.cross_entropy(output, target, size_average=False).data[0]
 
-                test_loss += loss.data[0]
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += predicted.eq(labels.data).cpu().sum()
-                
-                t.update()
-                tqdm.write('Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            pred = output.data.max(1, keepdim=True)[1]
+            correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+            
+        loss /= len(data_loader.dataset)
+            
+        tqdm.write('\nAverage loss: {:.4f}, Accuracy: {}/{} ({:.3f}%)\n'.format(
+            loss, correct, len(data_loader.dataset),
+            100. * correct / len(data_loader.dataset)))
 
     for epoch in range(50):
         train_net(epoch)
-        test_net(epoch)
+        evaluate(test_dataset_loader)
