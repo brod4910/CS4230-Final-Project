@@ -40,7 +40,7 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
 
     for batch_idx, (data, target) in enumerate(data_loader):
 
-        data_load_tot += time.clock() - dataload_t0
+        data_load_tot += time.clock() - data_load_t0
 
         if use_cuda:
             data, target = Variable(data.cuda()), Variable(target.cuda())
