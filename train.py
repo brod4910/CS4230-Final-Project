@@ -35,7 +35,9 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
     model.train()
     correct = 0
 
-
+    data_load_tot = 0.
+    forward_tot = 0.
+    backward_tot = 0.
     data_load_t0 = time.clock()
 
     for batch_idx, (data, target) in enumerate(data_loader):
@@ -48,9 +50,15 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
             data, target = Variable(data), Variable(target)
             
         optimizer.zero_grad()
+
+        forward_t1 = time.clock()
         output = model(data)
         loss = F.cross_entropy(output, target)
+        forward_tot += time.clock() - data_load_t1
+
+        backward_t2 = time.clock()
         loss.backward()
+        backward_tot += time.clock() - backward_t2
         optimizer.step()
 
         pred = output.data.max(1)[1] # get the index of the max log-probability
@@ -64,8 +72,9 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
 
         data_load_t0 = time.clock()
 
-    print("Data Load Time: {:.4f}".format(data_load_tot / len(data_loader.dataset)))
-
+    print("Data Load Time: {:.4f}".format(data_load_tot / batch_idx))
+    print("Forwardpass Time: {:.4f}".format(forward_tot / batch_idx))
+    print("Backwardpass Time: {:.4f}".format(backward_tot / batch_idx))
 
 def test_epoch(model, data_loader, use_cuda):
     model.eval()
