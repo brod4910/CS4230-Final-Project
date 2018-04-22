@@ -13,7 +13,7 @@ class VGG19(nn.Module):
         super(VGG19, self).__init__()
 
         self.b0 = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size= 3, stride= 1, padding=1),
+            nn.Conv2d(3, 64, kernel_size= 3, stride= 1, padding=1),
             nn.ReLU(inplace= True),
             nn.Conv2d(64, 64, kernel_size= 3, stride= 1, padding=1),
             nn.ReLU(inplace= True),
