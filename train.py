@@ -10,7 +10,7 @@ import sys
 
 def train(args, model, use_cuda):
     # torch.manual_seed(args.seed + rank)
-    data_tot, forward_tot, backward_tot = 0.
+    data_tot, forward_tot, backward_tot = 0., 0., 0.
     train_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10('../data', train=True, download=True,
                     transform=transforms.Compose([
