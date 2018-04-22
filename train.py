@@ -10,7 +10,7 @@ import sys
 
 def train(args, model, use_cuda):
     # torch.manual_seed(args.seed + rank)
-
+    data_tot, forward_tot, backward_tot = 0.
     train_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10('../data', train=True, download=True,
                     transform=transforms.Compose([
@@ -29,9 +29,12 @@ def train(args, model, use_cuda):
 
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     for epoch in range(1, args.epochs + 1):
-        train_epoch(epoch, args, model, train_loader, optimizer, use_cuda)
+        data_tot, forward_tot, backward_tot += train_epoch(epoch, args, model, train_loader, optimizer, use_cuda)
         test_epoch(model, test_loader, use_cuda)
 
+    Print("The Data Loading Average: {:.4f}".format(data_tot / (50000*args.epochs)))
+    Print("The Forwardpass Average: {:.4f}".format(forward_tot / (50000*args.epochs)))
+    Print("The Backwardpass Average: {:.4f}".format(backward_tot / (50000*args.epochs)))
 
 def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
     model.train()
@@ -77,6 +80,8 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
     print("Data Load Time: {:.4f}".format(data_load_tot / batch_idx))
     print("Forwardpass Time: {:.4f}".format(forward_tot / batch_idx))
     print("Backwardpass Time: {:.4f}".format(backward_tot / batch_idx))
+
+    return data_load_tot, forward_tot, backward_tot
 
 def test_epoch(model, data_loader, use_cuda):
     model.eval()
