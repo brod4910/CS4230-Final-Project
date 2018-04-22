@@ -77,4 +77,4 @@ class VGG19(nn.Module):
         out = self.b4(out)
         out = out.view(out.size(0), -1)
         out = self.final(out)
-        return F.log_softmax(out, dim=1)
+        return out
