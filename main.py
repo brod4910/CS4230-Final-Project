@@ -32,7 +32,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
           
         self.features = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(32),
             nn.ReLU(inplace=True),
             nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     # torch.manual_seed(args.seed)
 
-    model = vgg19.VGG19()
+    model = Net()
     # model.share_memory() # gradients are allocated lazily, so they are not shared here
     use_cuda = torch.cuda.is_available()
 
