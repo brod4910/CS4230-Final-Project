@@ -54,7 +54,7 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
         forward_t1 = time.clock()
         output = model(data)
         loss = F.cross_entropy(output, target)
-        forward_tot += time.clock() - data_load_t1
+        forward_tot += time.clock() - forward_t1
 
         backward_t2 = time.clock()
         loss.backward()
