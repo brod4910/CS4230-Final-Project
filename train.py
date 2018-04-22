@@ -12,12 +12,14 @@ def train(args, model, use_cuda):
     train_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10('../data', train=True, download=True,
                     transform=transforms.Compose([
+                        transforms.Resize((224, 224)),
                         transforms.ToTensor(),
                         transforms.Normalize((0.1307,), (0.3081,))
                     ])),
         batch_size=args.batch_size, shuffle=True, num_workers=2)
     test_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10('../data', train=False, transform=transforms.Compose([
+                        transforms.Resize((224, 224)),
                         transforms.ToTensor(),
                         transforms.Normalize((0.1307,), (0.3081,))
                     ])),
