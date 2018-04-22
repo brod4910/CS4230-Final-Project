@@ -28,6 +28,7 @@ def train(args, model, use_cuda):
         batch_size=args.batch_size, shuffle=True, num_workers=2)
 
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    total_time = time.clock()
     for epoch in range(1, args.epochs + 1):
         data_t0, forward_t1, backward_t2 = train_epoch(epoch, args, model, train_loader, optimizer, use_cuda)
         data_tot += data_t0
@@ -35,9 +36,10 @@ def train(args, model, use_cuda):
         backward_t2 += backward_t2
         test_epoch(model, test_loader, use_cuda)
 
-    Print("The Data Loading Average: {:.4f}".format(data_tot / (50000*args.epochs)))
-    Print("The Forwardpass Average: {:.4f}".format(forward_tot / (50000*args.epochs)))
-    Print("The Backwardpass Average: {:.4f}".format(backward_tot / (50000*args.epochs)))
+    print("The Total Training and Inference time: {:.4f}".format(time.clock() - total_time))
+    print("The Data Loading Average: {:.4f}".format(data_tot / (50000*args.epochs)))
+    print("The Forwardpass Average: {:.4f}".format(forward_tot / (50000*args.epochs)))
+    print("The Backwardpass Average: {:.4f}".format(backward_tot / (50000*args.epochs)))
 
 def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
     model.train()
