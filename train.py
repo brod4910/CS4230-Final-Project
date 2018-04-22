@@ -29,7 +29,10 @@ def train(args, model, use_cuda):
 
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     for epoch in range(1, args.epochs + 1):
-        data_tot, forward_tot, backward_tot += train_epoch(epoch, args, model, train_loader, optimizer, use_cuda)
+        data_t0, forward_t1, backward_t2 = train_epoch(epoch, args, model, train_loader, optimizer, use_cuda)
+        data_tot += data_t0
+        forward_tot += forward_t1
+        backward_t2 += backward_t2
         test_epoch(model, test_loader, use_cuda)
 
     Print("The Data Loading Average: {:.4f}".format(data_tot / (50000*args.epochs)))
