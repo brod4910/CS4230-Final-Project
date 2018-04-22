@@ -65,6 +65,6 @@ def test_epoch(model, data_loader, use_cuda):
         correct += pred.eq(target.data).cpu().sum()
 
     test_loss /= len(data_loader.dataset)
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.4f}%)\n'.format(
         test_loss, correct, len(data_loader.dataset),
         100. * correct / len(data_loader.dataset)))
