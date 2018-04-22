@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     # torch.manual_seed(args.seed)
 
-    model = Net()
+    model = vgg.VGG19()
     # model.share_memory() # gradients are allocated lazily, so they are not shared here
     use_cuda = torch.cuda.is_available()
 
