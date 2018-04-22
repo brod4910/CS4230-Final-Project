@@ -41,7 +41,7 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
             
         optimizer.zero_grad()
         output = model(data)
-        loss = F.nll_loss(output, target)
+        loss = F.cross_entropy(output, target)
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
@@ -60,7 +60,7 @@ def test_epoch(model, data_loader, use_cuda):
             data, target = Variable(data, volatile=True), Variable(target)
 
         output = model(data)
-        test_loss += F.nll_loss(output, target, size_average=False).data[0] # sum up batch loss
+        test_loss += F.cross_entropy(output, target, size_average=False).data[0] # sum up batch loss
         pred = output.data.max(1)[1] # get the index of the max log-probability
         correct += pred.eq(target.data).cpu().sum()
 
