@@ -34,7 +34,14 @@ def train(args, model, use_cuda):
 def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
     model.train()
     correct = 0
+
+
+    data_load_t0 = time.clock()
+
     for batch_idx, (data, target) in enumerate(data_loader):
+
+        data_load_tot += time.clock() - dataload_t0
+
         if use_cuda:
             data, target = Variable(data.cuda()), Variable(target.cuda())
         else:
@@ -46,13 +53,19 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
         loss.backward()
         optimizer.step()
 
-        if batch_idx % args.log_interval == 0:
-            pred = output.data.max(1)[1] # get the index of the max log-probability
-            correct += pred.eq(target.data).cpu().sum()
+        pred = output.data.max(1)[1] # get the index of the max log-probability
+        correct += pred.eq(target.data).cpu().sum()
 
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}, , Accuracy: {}/{} ({:.4f}%)'.format(
+        if batch_idx % args.log_interval == 0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}, Accuracy: {}/{} ({:.4f}%)'.format(
                 epoch, batch_idx * len(data), len(data_loader.dataset),
-                100. * batch_idx / len(data_loader), loss.data[0], 100. * correct / len(data_loader.dataset)))
+                100. * batch_idx / len(data_loader), loss.data[0], 
+                correct, len(data_loader.dataset), 100. * correct / len(data_loader.dataset)))
+
+        data_load_t0 = time.clock()
+
+    print("Data Load Time: {:.4f}".format(data_load_tot / len(data_loader.dataset)))
+
 
 def test_epoch(model, data_loader, use_cuda):
     model.eval()
