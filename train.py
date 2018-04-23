@@ -55,7 +55,7 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
         data_load_tot += time.clock() - data_load_t0
 
         if use_cuda:
-            data, target = Variable(data.cuda()), Variable(target.cuda())
+            data, target = Variable(data.cuda(torch.cuda.device_count()[1:])), Variable(target.cuda(torch.cuda.device_count()[1:]))
         else:
             data, target = Variable(data), Variable(target)
             

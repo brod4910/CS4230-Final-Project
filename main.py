@@ -100,6 +100,6 @@ if __name__ == '__main__':
         
     if use_cuda:
         print("===> Cuda is available")
-        model.cuda()
+        model.cuda(0)
 
     train(args, model, use_cuda)
