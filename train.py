@@ -92,16 +92,18 @@ def test_epoch(model, data_loader, use_cuda):
     model.eval()
     test_loss = 0
     correct = 0
-    for data, target in data_loader:
-        if use_cuda:
-            data, target = Variable(data.cuda(), volatile=True), Variable(target.cuda())
-        else:
-            data, target = Variable(data, volatile=True), Variable(target)
+    with torch.no_grad():
+        for data, target in data_loader:
+            if use_cuda:
+                data, target = Variable(data.cuda()), Variable(target.cuda())
+            else:
+                data, target = Variable(data), Variable(target)
 
-        output = model(data)
-        test_loss += F.cross_entropy(output, target, size_average=False).data[0] # sum up batch loss
-        pred = output.data.max(1)[1] # get the index of the max log-probability
-        correct += pred.eq(target.data).cpu().sum()
+            output = model(data)
+            loss = F.cross_entropy(output, target, size_average=False) # sum up batch loss
+            total_loss += loss.data[0]
+            pred = output.data.max(1)[1] # get the index of the max log-probability
+            correct += pred.eq(target.data).cpu().sum()
 
     test_loss /= len(data_loader.dataset)
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.4f}%)\n'.format(
