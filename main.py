@@ -93,13 +93,12 @@ if __name__ == '__main__':
 
     model = vgg19_bn(num_classes= 10)
     use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
 
     if torch.cuda.device_count() > 1:
         print("===> Number of GPU's available: %d" % torch.cuda.device_count())
         model = nn.DataParallel(model)
-        
-    if use_cuda:
-        print("===> Cuda is available")
-        model.cuda(0)
 
-    train(args, model, use_cuda)
+    model.to(device)
+
+    train(args, model, device)

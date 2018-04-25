@@ -8,7 +8,7 @@ import torch.backends.cudnn as cudnn
 import time
 import sys
 
-def train(args, model, use_cuda):
+def train(args, model, device):
     # torch.manual_seed(args.seed + rank)
     data_tot, forward_tot, backward_tot = 0., 0., 0.
     train_loader = torch.utils.data.DataLoader(
@@ -30,18 +30,18 @@ def train(args, model, use_cuda):
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     total_time = time.clock()
     for epoch in range(1, args.epochs + 1):
-        data_t0, forward_t1, backward_t2 = train_epoch(epoch, args, model, train_loader, optimizer, use_cuda)
+        data_t0, forward_t1, backward_t2 = train_epoch(epoch, args, model, train_loader, optimizer, device)
         data_tot += data_t0
         forward_tot += forward_t1
         backward_t2 += backward_t2
-        test_epoch(model, test_loader, use_cuda)
+        test_epoch(model, test_loader, device)
 
     print("The Total Training and Inference time: {:.4f}".format(time.clock() - total_time))
     print("The Data Loading Average: {:.10f}".format(data_tot / (50000*args.epochs)))
     print("The Forwardpass Average: {:.10f}".format(forward_tot / (50000*args.epochs)))
     print("The Backwardpass Average: {:.10f}".format(backward_tot / (50000*args.epochs)))
 
-def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
+def train_epoch(epoch, args, model, data_loader, optimizer, device):
     model.train()
     correct = 0
 
@@ -54,10 +54,7 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
 
         data_load_tot += time.clock() - data_load_t0
 
-        if use_cuda:
-            data, target = Variable(data.cuda()), Variable(target.cuda())
-        else:
-            data, target = Variable(data), Variable(target)
+        data, target = data.to(device), target.to(device)
             
         optimizer.zero_grad()
 
@@ -77,7 +74,7 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}, Accuracy: {}/{} ({:.4f}%)'.format(
                 epoch, batch_idx * len(data), len(data_loader.dataset),
-                100. * batch_idx / len(data_loader), loss.data[0], 
+                100. * batch_idx / len(data_loader), loss.item(), 
                 correct, len(data_loader.dataset), 100. * correct / len(data_loader.dataset)))
 
         data_load_t0 = time.clock()
@@ -88,20 +85,18 @@ def train_epoch(epoch, args, model, data_loader, optimizer, use_cuda):
 
     return data_load_tot, forward_tot, backward_tot
 
-def test_epoch(model, data_loader, use_cuda):
+def test_epoch(model, data_loader, device):
     model.eval()
     test_loss = 0
     correct = 0
     with torch.no_grad():
         for data, target in data_loader:
-            if use_cuda:
-                data, target = Variable(data.cuda()), Variable(target.cuda())
-            else:
-                data, target = Variable(data), Variable(target)
+
+            data, target = data.to(device), target.to(device)
 
             output = model(data)
             loss = F.cross_entropy(output, target, size_average=False) # sum up batch loss
-            total_loss += loss.data[0]
+            total_loss += loss.item()
             pred = output.data.max(1)[1] # get the index of the max log-probability
             correct += pred.eq(target.data).cpu().sum()
 
