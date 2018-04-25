@@ -96,7 +96,7 @@ def test_epoch(model, data_loader, device):
 
             output = model(data)
             loss = F.cross_entropy(output, target, size_average=False) # sum up batch loss
-            total_loss += loss.item()
+            test_loss += loss.item()
             pred = output.data.max(1)[1] # get the index of the max log-probability
             correct += pred.eq(target.data).cpu().sum()
 
