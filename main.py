@@ -98,16 +98,11 @@ if __name__ == '__main__':
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    devices = []
-
-    for i in range(torch.cuda.device_count()):
-        devices.append(i)
-
     model.to(device)
 
     if torch.cuda.device_count() > 1:
         print("===> Number of GPU's available: %d" % torch.cuda.device_count())
-        model = nn.DataParallel(model, devices=devices)
+        model = nn.DataParallel(model, devices=[0,1,2])
 
 
     train(args, model, device)
