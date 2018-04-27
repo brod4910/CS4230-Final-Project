@@ -90,15 +90,22 @@ def vgg19_bn(**kwargs):
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2'
 
     model = vgg19_bn(num_classes= 10)
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    if torch.cuda.device_count() > 1:
-        print("===> Number of GPU's available: %d" % torch.cuda.device_count())
-        model = nn.DataParallel(model)
+    devices = []
+
+    for i in range(torch.cuda.device_count()):
+        devices.append(i)
 
     model.to(device)
+    
+    if torch.cuda.device_count() > 1:
+        print("===> Number of GPU's available: %d" % torch.cuda.device_count())
+        model = nn.DataParallel(model, devices=devices)
+
 
     train(args, model, device)

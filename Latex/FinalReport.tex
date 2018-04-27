@@ -1,0 +1,40 @@
+\documentclass[10pt,conference]{ieeeconf}
+\bibliographystyle{ieeetr}
+\usepackage{graphicx}
+\usepackage{float}
+\graphicspath{{/}}
+\begin{document}
+\title{Case Study: Data parallelization using Pytorch}
+\author{Brian Rodriguez, University of Utah}
+\maketitle
+
+\begin{abstract}
+	The objective of this final lab was to bring all of the material that we learned over the course of the semester, full circle. Utilizing important constructs; registers, buffers, and finite state machines (FSM) to construct a simple CPU.
+\end{abstract}
+
+\section{INTRODUCTION}
+	Implementing the simple CPU was quite a challenge and tested our knowledge of Verilog and the constructs of registers and tri-state buffers. Not only did it test our knowledge on these constructs but also on timing and FSMs. There were many design considerations that went into implementing the simple CPU; different FSM designs, buffers, and register modules. These are the design approaches and observations made while developing the simple CPU.
+
+\section{APPROACH}
+	While the CPU itself was a simple task, the intermediate steps of figuring out how to set up registers, tri-state buffers, and synchronizing the different states posed to be the most challenging part of the lab. Implementing registers and the tri-state buffers was a simple task since the code was given to us in the book refer to Figure \ref{fig:REGN} \ref{fig:TRI}. Understanding the code is quite simple as well. When the enable signal for both the register and the tri-state buffer is 1, simply load the value from the bus to the registers or load in the value from the register on the bus. The next construct was the simple ALU. It merely depended on current state of the finite state machine and also the clock. For any given state, the ALU always had an output; depending on the state the ALU would perform an operation or set the Rout register to 4'b0000. An important about the ALU is the clock, this was something I looked over during initial development. The ALU, at first, was not synchronized with the clock and caused issues when I downloaded my code to the FPGA board. I was baffled that the test bench showed correct outputs but when I downloaded the code to the board, it showed incorrect outputs. I later figured out that it was because the ALU was not synchronized with the clock.
+
+	The most important part of the CPU is the finite state machine. The FSM controls when values are being loaded and the operation of the ALU. During development, the FSM took the most time and effort to build. It took a bit of time to realize the structure I wanted the FSM to take. I used 2 variables that controlled the state of the FSM. One controlled the case statement and the other controlled the actual state of the FSM. The case statement variable was used to assign the proper operational value to the ALU and also controlled the next state of the FSM, refer to Figure \ref{fig:FSM}. The state variable controlled the next operation that would be executed. The state variable is assigned to the variable that controls the case statement in the next clock cycle, refer to Figure \ref{fig:INS}. Essentially, the case statement controller assigns the state variable a new value every clock cycle and the case statement controller gets that new value the next clock cycle. The current state of the case statement controller also selects the proper operations for the tri-state buffers and registers. If the state of the variable is in state 4'b0010 then 4'b0011 would be loaded into R2. The variable is a selector for loading values int their respective registers or setting values on the bus.
+
+
+\section{OBSERVATIONS \& RESULTS}
+	The logic behind the entire CPU program was not complicated and it showed in the synthesis report; only 37 LUTs and 24 registers were used. The longest path was from the input to the LEDs. More specifically, the 3rd bit of the input data to the 6th bit of the LEDs; it takes around 6.692 nanoseconds for this path. An interesting observation I noticed was a section in the synthesis report, the slice logic distribution. From my understanding this reports the amount of LUTs that use a flip-flop, also known as a LUT flip flop pair. The number of pairs used in this design were 33 LUT flip flop pairs.
+
+\section{CONCLUSION}
+	I chose the simple CPU as the final project because I felt it would solidify the concepts of tri-state buffers, registers and FSMs. It was a challenge but I did learn a tremendous amount while developing the simple CPU. One of the most important things I learned towards the end of development was to always make sure that all the modules are synchronized with the clock. This caused a majority of the issues I was having when synthesizing the Verilog code onto the FPGA board. Something this simple and trivial is easy to over look and its import to realize for further development that while the higher level constructs are important, the intermediate steps are also still very important when developing.
+
+%\begin{figure*}
+%\begin{center}
+%\includegraphics[width=1.0\columnwidth]{waveform}
+%\end{center}
+%	\caption{\textbf{The waveform that displays the LED outputs and the bus outputs.}}
+%\label{fig:WF}
+%\end{figure*}
+
+
+
+\end{document}

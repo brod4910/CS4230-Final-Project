@@ -28,9 +28,10 @@ def train(args, model, device):
         batch_size=args.batch_size, shuffle=True, num_workers=2)
 
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    criterion = nn.CrossEntropyLoss().cuda()
     total_time = time.clock()
     for epoch in range(1, args.epochs + 1):
-        data_t0, forward_t1, backward_t2 = train_epoch(epoch, args, model, train_loader, optimizer, device)
+        data_t0, forward_t1, backward_t2 = train_epoch(epoch, args, model, train_loader, optimizer, criterion, device)
         data_tot += data_t0
         forward_tot += forward_t1
         backward_t2 += backward_t2
@@ -41,7 +42,7 @@ def train(args, model, device):
     print("The Forwardpass Average: {:.10f}".format(forward_tot / (50000*args.epochs)))
     print("The Backwardpass Average: {:.10f}".format(backward_tot / (50000*args.epochs)))
 
-def train_epoch(epoch, args, model, data_loader, optimizer, device):
+def train_epoch(epoch, args, model, data_loader, optimizer, criterion, device):
     model.train()
     correct = 0
 
@@ -60,7 +61,7 @@ def train_epoch(epoch, args, model, data_loader, optimizer, device):
 
         forward_t1 = time.clock()
         output = model(data)
-        loss = F.cross_entropy(output, target)
+        loss = criterion(output, target)
         forward_tot += time.clock() - forward_t1
 
         backward_t2 = time.clock()
@@ -69,7 +70,7 @@ def train_epoch(epoch, args, model, data_loader, optimizer, device):
         optimizer.step()
 
         pred = output.data.max(1)[1] # get the index of the max log-probability
-        correct += pred.eq(target.data).cpu().sum()
+        correct += pred.eq(target.data).sum()
 
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}, Accuracy: {}/{} ({:.4f}%)'.format(
@@ -98,7 +99,7 @@ def test_epoch(model, data_loader, device):
             loss = F.cross_entropy(output, target, size_average=False) # sum up batch loss
             test_loss += loss.item()
             pred = output.data.max(1)[1] # get the index of the max log-probability
-            correct += pred.eq(target.data).cpu().sum()
+            correct += pred.eq(target.data).sum()
 
     test_loss /= len(data_loader.dataset)
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.4f}%)\n'.format(
