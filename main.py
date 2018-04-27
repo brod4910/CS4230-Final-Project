@@ -7,6 +7,8 @@ import torch.multiprocessing as mp
 import math
 from train import train
 import vgg19
+import os
+import sys
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
@@ -102,7 +104,7 @@ if __name__ == '__main__':
         devices.append(i)
 
     model.to(device)
-    
+
     if torch.cuda.device_count() > 1:
         print("===> Number of GPU's available: %d" % torch.cuda.device_count())
         model = nn.DataParallel(model, devices=devices)
