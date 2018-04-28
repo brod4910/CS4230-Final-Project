@@ -70,13 +70,13 @@ def train_epoch(epoch, args, model, data_loader, optimizer, criterion, device):
         optimizer.step()
 
         pred = output.data.max(1)[1] # get the index of the max log-probability
-        correct += pred.eq(target.data).sum()
+        correct = pred.eq(target.data).sum()
 
         if batch_idx % args.log_interval == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}, Accuracy: {}/{} ({:.4f}%)'.format(
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}, Accuracy: {}/{}'.format(
                 epoch, batch_idx * len(data), len(data_loader.dataset),
                 100. * batch_idx / len(data_loader), loss.item(), 
-                correct, len(data_loader.dataset), 100. * correct / len(data_loader.dataset)))
+                correct, len(data_loader.dataset)))
 
         data_load_t0 = time.clock()
 
