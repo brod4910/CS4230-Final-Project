@@ -28,7 +28,7 @@ def train(args, model, device):
         batch_size=args.batch_size, shuffle=True, num_workers=2)
 
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
-    criterion = nn.CrossEntropyLoss().cuda()
+    criterion = torch.nn.CrossEntropyLoss().cuda()
     total_time = time.clock()
     for epoch in range(1, args.epochs + 1):
         data_t0, forward_t1, backward_t2 = train_epoch(epoch, args, model, train_loader, optimizer, criterion, device)
