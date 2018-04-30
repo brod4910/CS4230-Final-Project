@@ -1,0 +1,17 @@
+\begin{thebibliography}{1}
+
+\bibitem{VGG19}
+K.~Simonyan and A.~Zisserman, ``Very deep convolutional networks for
+  large-scale image recognition,'' {\em CoRR}, vol.~abs/1409.1556, 2014.
+
+\bibitem{IN4}
+C.~Szegedy, S.~Ioffe, and V.~Vanhoucke, ``Inception-v4, inception-resnet and
+  the impact of residual connections on learning,'' {\em CoRR},
+  vol.~abs/1602.07261, 2016.
+
+\bibitem{VDNN}
+M.~Rhu, N.~Gimelshein, J.~Clemons, A.~Zulfiqar, and S.~W. Keckler,
+  ``Virtualizing deep neural networks for memory-efficient neural network
+  design,'' {\em CoRR}, vol.~abs/1602.08124, 2016.
+
+\end{thebibliography}
